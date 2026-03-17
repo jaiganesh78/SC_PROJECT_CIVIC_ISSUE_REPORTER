@@ -22,11 +22,11 @@ const createIssue = async (req, res) => {
     // SAFE BODY ACCESS (multipart)
     // ===============================
     const description = req.body?.description || "";
-    const latitude = req.body?.latitude;
-    const longitude = req.body?.longitude;
+    const latitude = Number(req.body?.latitude);
+    const longitude = Number(req.body?.longitude);
     const force_duplicate = req.body?.force_duplicate === "true";
     const forced_against_issue_id = req.body?.forced_against_issue_id || null;
-
+   
     // ===============================
     // BASIC VALIDATION
     // ===============================
@@ -98,7 +98,20 @@ const createIssue = async (req, res) => {
     // ===============================
     // 5️⃣ REVERSE GEOCODING
     // ===============================
-    const place = await reverseGeocode(latitude, longitude);
+    const placeData = await reverseGeocode(latitude, longitude);
+
+const place = {
+  area: placeData?.area || null,
+  city: placeData?.city || null,
+  state: placeData?.state || null,
+  formatted: [
+    placeData?.area,
+    placeData?.city,
+    placeData?.state,
+  ]
+    .filter(Boolean)
+    .join(", ") || null,
+};
 
     // ===============================
     // 6️⃣ DUPLICATE DETECTION
@@ -119,7 +132,17 @@ const createIssue = async (req, res) => {
         possible_duplicates: duplicates,
       });
     }
+    if (force_duplicate && forced_against_issue_id) {
 
+  const originalIssue = await Issue.findById(forced_against_issue_id);
+
+  if (!originalIssue) {
+    return res.status(400).json({
+      message: "Original issue for duplicate not found"
+    });
+  }
+
+}
     // ===============================
     // 7️⃣ ISSUE CREATION (IMPORTANT)
     // ===============================
@@ -130,6 +153,8 @@ const createIssue = async (req, res) => {
       latitude,
       longitude,
       place, 
+      issue_image: req.file ? `uploads/issues/${req.file.filename}` : null,
+      duplicates: [],
       // 🔥 BASE PRIORITY (IMMUTABLE)
       priority_score_base: ai_priority_score,
 
@@ -151,6 +176,14 @@ const createIssue = async (req, res) => {
         ? forced_against_issue_id
         : null,
     });
+    if (force_duplicate && forced_against_issue_id) {
+
+  await Issue.findByIdAndUpdate(
+    forced_against_issue_id,
+    { $push: { duplicates: issue._id } }
+  );
+
+}
 
     // ===============================
     // 🔔 NOTIFICATIONS
@@ -242,10 +275,10 @@ const getIssueById = async (req, res) => {
 
   // 🧭 Map usage
   location: {
-    latitude: issue.latitude,
-    longitude: issue.longitude,
-    place: issue.place || null, // 👈 human readable
-  },
+  latitude: issue.latitude,
+  longitude: issue.longitude,
+  place: issue.place?.formatted || null,
+},
 
   // 📊 Priority & status
   priority_score: issue.priority_score,

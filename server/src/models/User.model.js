@@ -51,7 +51,10 @@ trust_score: {
   min:0,
   max:100,
 },
-
+department_name: {
+ type: String,
+ default: null
+},
 is_banned: {
   type: Boolean,
   default: false,

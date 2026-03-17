@@ -14,9 +14,12 @@ const RESOLUTION_UPLOAD_DIR = path.join("uploads", "resolutions");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Default: issue creation image
+  if (req.originalUrl.includes("resolve")) {
+    cb(null, RESOLUTION_UPLOAD_DIR);
+  } else {
     cb(null, ISSUE_UPLOAD_DIR);
-  },
+  }
+},
   filename: (req, file, cb) => {
     const uniqueName =
       Date.now() + "-" + Math.round(Math.random() * 1e9);

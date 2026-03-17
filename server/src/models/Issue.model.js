@@ -108,8 +108,22 @@ const issueSchema = new mongoose.Schema(
       default: false,
     },
 place: {
-  type: String,
-  default: null,
+  area: {
+    type: String,
+    default: null,
+  },
+  city: {
+    type: String,
+    default: null,
+  },
+  state: {
+    type: String,
+    default: null,
+  },
+  formatted: {
+    type: String,
+    default: null,
+  },
 },
 
     forced_against_issue_id: {
@@ -117,7 +131,13 @@ place: {
       ref: "Issue",
       default: null,
     },
-
+duplicates: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Issue"
+  }
+],
+issue_image: String,
     // ===============================
     // 🖼 IMAGE AUDIT (DEBUG ONLY)
     // ===============================

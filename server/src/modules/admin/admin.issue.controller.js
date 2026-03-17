@@ -1,7 +1,8 @@
 const Issue = require("../../models/Issue.model");
 const User = require("../../models/User.model");
 const { notify } = require("../../services/notification.service");
-
+const { closeDuplicateIssues } =
+  require("../issue/duplicateResolution.service");
 /**
  * ADMIN: Get issues pending verification
  */
@@ -39,8 +40,9 @@ const approveIssueResolution = async (req, res) => {
     }
 
     issue.status = "closed";
+    issue.resolved_at = new Date();
     await issue.save();
-
+const closedDuplicates = await closeDuplicateIssues(issue._id);
     const reporter = await User.findById(issue.user_id);
 
     // 🔔 Notify USER
@@ -52,6 +54,7 @@ const approveIssueResolution = async (req, res) => {
 
     return res.status(200).json({
       message: "Issue verified and closed",
+      duplicates_closed: closedDuplicates,
       issue,
     });
   } catch (error) {

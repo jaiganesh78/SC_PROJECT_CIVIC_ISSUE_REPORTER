@@ -40,7 +40,7 @@ async function findDuplicateIssues({
   // 1️⃣ Fetch candidate issues (coarse DB filter)
   const candidates = await Issue.find({
     category,
-    status: { $ne: "closed" },
+    status: { $nin: ["closed","fake"] },
     createdAt: { $gte: since },
   }).select("_id latitude longitude status createdAt");
 
