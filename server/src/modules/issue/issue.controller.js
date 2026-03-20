@@ -26,7 +26,7 @@ const createIssue = async (req, res) => {
     const longitude = Number(req.body?.longitude);
     const force_duplicate = req.body?.force_duplicate === "true";
     const forced_against_issue_id = req.body?.forced_against_issue_id || null;
-   
+   console.log("REQ.FILE:", req.file);
     // ===============================
     // BASIC VALIDATION
     // ===============================
