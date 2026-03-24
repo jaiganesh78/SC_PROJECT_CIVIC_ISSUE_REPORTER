@@ -7,9 +7,10 @@ const upload = require("../../middleware/upload.middleware");
 const {
   createIssue,
   getIssues,
-  getIssueById
+  getIssueById,
+  getMyIssues,
 } = require("./issue.controller");
-
+router.get("/me", auth, getMyIssues);
 router.get("/:id", auth, getIssueById);
 router.post(
   "/",
@@ -18,6 +19,7 @@ router.post(
   upload.single("image"),
   createIssue
 );
-router.get("/", getIssues);
+router.get("/", auth, getIssues);
+
 
 module.exports = router;

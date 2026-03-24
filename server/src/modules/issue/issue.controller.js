@@ -1,4 +1,5 @@
 const Issue = require("../../models/Issue.model");
+const Vote = require("../../models/Vote.model"); // ✅ MUST EXIST
 const User = require("../../models/User.model");
 const { calculateTimeEscalation } = require("./priorityEscalation.service");
 
@@ -307,19 +308,47 @@ const getIssueById = async (req, res) => {
 /**
  * GET ISSUES (sorted by priority)
  */
+
+
 const getIssues = async (req, res) => {
   const issues = await Issue.find();
 
-  const enrichedIssues = issues.map((issue) => {
-    const timeEscalation = calculateTimeEscalation(issue);
+  // 🔥 get user (if logged in)
+  const userId = req.user?.userId || null;
 
-    return {
-      ...issue.toObject(),
-      priority_score:
-        issue.priority_score + timeEscalation,
-      time_escalation: timeEscalation,
-    };
-  });
+  const enrichedIssues = await Promise.all(
+    issues.map(async (issue) => {
+      const timeEscalation = calculateTimeEscalation(issue);
+
+      // 🔥 COUNT VOTES
+      const voteCount = await Vote.countDocuments({
+        issue_id: issue._id,
+      });
+
+      // 🔥 CHECK USER VOTED
+      let hasVoted = false;
+      if (userId) {
+        const vote = await Vote.findOne({
+          issue_id: issue._id,
+          user_id: userId,
+        });
+        hasVoted = !!vote;
+      }
+
+      return {
+        ...issue.toObject(),
+
+        priority_score:
+          issue.priority_score + timeEscalation,
+
+        time_escalation: timeEscalation,
+
+        // 🔥 NEW FIELDS
+        vote_count: voteCount,
+        has_voted: hasVoted,
+      };
+    })
+  );
 
   enrichedIssues.sort(
     (a, b) => b.priority_score - a.priority_score
@@ -328,8 +357,37 @@ const getIssues = async (req, res) => {
   res.json({ issues: enrichedIssues });
 };
 
+const getMyIssues = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const issues = await Issue.find({ user_id: userId });
+
+    const enriched = await Promise.all(
+      issues.map(async (issue) => {
+        const voteCount = await Vote.countDocuments({
+          issue_id: issue._id,
+        });
+
+        return {
+          ...issue.toObject(),
+          vote_count: voteCount,
+          has_voted: false, // always false (own issue)
+          is_own_issue: true,
+        };
+      })
+    );
+
+    res.json({ issues: enriched });
+  } catch (err) {
+    console.error("GET MY ISSUES ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createIssue,
   getIssues,
-  getIssueById
+  getIssueById,
+  getMyIssues,
 };

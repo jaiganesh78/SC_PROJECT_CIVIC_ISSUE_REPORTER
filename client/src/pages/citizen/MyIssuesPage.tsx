@@ -12,7 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { demoIssues } from '@/data/demoIssues';
+import { useMyIssues } from '@/hooks/useMyIssues';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCategoryDisplayName, getStatusDisplayName, Issue } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -26,10 +26,7 @@ export default function MyIssuesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Filter to show only user's own issues
-  const myIssues = useMemo(() => {
-    // In demo, we'll show issues where is_own_issue is true
-    return demoIssues.filter(issue => issue.is_own_issue || issue.user_id === user?.id);
-  }, [user?.id]);
+ const { data: myIssues = [], isLoading } = useMyIssues();
 
   const stats = useMemo(() => {
     const pending = myIssues.filter(i => ['pending', 'assigned', 'in_progress'].includes(i.status)).length;
@@ -37,7 +34,15 @@ export default function MyIssuesPage() {
     const total = myIssues.length;
     return { pending, resolved, total };
   }, [myIssues]);
-
+if (isLoading) {
+  return (
+    <MainLayout requireAuth allowedRoles={['user']}>
+      <div className="flex justify-center py-10">
+        <span>Loading your issues...</span>
+      </div>
+    </MainLayout>
+  );
+}
   const categoryClasses: Record<string, string> = {
     garbage_overflow: 'category-garbage',
     pothole: 'category-pothole',
@@ -63,7 +68,7 @@ export default function MyIssuesPage() {
   };
 
   return (
-    <MainLayout requireAuth allowedRoles={['citizen']}>
+    <MainLayout requireAuth allowedRoles={['user']}>
       <div className="container py-8">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -162,7 +167,7 @@ export default function MyIssuesPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>Reported {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}</span>
+                        <span>Reported {formatDistanceToNow(new Date(issue.created_at || Date.now()), { addSuffix: true })}</span>
                       </div>
                     </div>
 
@@ -220,6 +225,7 @@ export default function MyIssuesPage() {
           </Card>
         )}
       </div>
+      
 
       {/* Issue Detail Modal */}
       <IssueDetailModal
@@ -227,6 +233,7 @@ export default function MyIssuesPage() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
       />
+      
     </MainLayout>
   );
 }

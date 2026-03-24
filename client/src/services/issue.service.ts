@@ -89,3 +89,7 @@ export async function voteOnIssue(issueId: string) {
   const response = await api.post(`/issues/${issueId}/vote`,{});
   return response.data;
 }
+export async function getMyIssues() {
+  const response = await api.get('/issues/me');
+  return response.data.issues;
+}

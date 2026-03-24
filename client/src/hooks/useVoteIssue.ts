@@ -6,8 +6,10 @@ export function useVoteIssue() {
 
   return useMutation({
     mutationFn: (issueId: string) => voteOnIssue(issueId),
-    onSuccess: () => {
+
+    onSuccess: (_, issueId) => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['issue', issueId] });
     },
   });
 }

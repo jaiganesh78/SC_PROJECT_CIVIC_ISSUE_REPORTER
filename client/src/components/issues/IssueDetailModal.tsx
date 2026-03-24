@@ -81,9 +81,9 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
   // 🔥 SAFE DATE HANDLING
   let timeAgo = 'Unknown';
   try {
-    if (issue.createdAt) {
-      timeAgo = formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true });
-    }
+    if (issue.created_at) {
+  timeAgo = formatDistanceToNow(new Date(issue.created_at), { addSuffix: true });
+}
   } catch {}
 
   let resolvedAgo = null;
@@ -99,9 +99,9 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
 
         {/* Image */}
         <div className="relative w-full">
-          {issue.issue_image ? (
+          {issue.image_url ? (
             <img
-             src={`http://localhost:5000/${issue.issue_image?.replace(/^\/+/, '')}`} // ✅ FIXED
+             src={issue.image_url} // ✅ FIXED
               alt="Issue"
               className="h-56 w-full object-cover sm:h-72"
             />
@@ -171,7 +171,7 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
             <div>
               <h4 className="text-sm font-medium text-foreground">Location</h4>
               <p className="text-sm text-muted-foreground">
-  {issue.place?.formatted || issue.place?.city || 'Location unavailable'}
+  {issue.place}
 </p>
             </div>
           </div>
@@ -189,7 +189,7 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
           </div>
 
           {/* Resolution Proof */}
-          {issue.resolution_proof_image && (
+          {issue.resolution?.proof_image_url && (
             <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/5 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -197,7 +197,7 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
               </div>
 
               <img
-                src={`http://localhost:5000/${issue.resolution_proof_image}`}
+                src={issue.resolution.proof_image_url}
                 alt="Resolution proof"
                 className="h-40 w-full rounded-lg object-cover"
               />

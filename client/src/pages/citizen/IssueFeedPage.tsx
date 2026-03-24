@@ -114,6 +114,11 @@ export default function IssueFeedPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" asChild>
+    <Link to="/my-issues">
+      My Issues
+    </Link>
+  </Button>
+            <Button variant="outline" asChild>
               <Link to="/map">
                 <MapPin className="mr-2 h-4 w-4" />
                 Map View
@@ -173,7 +178,7 @@ export default function IssueFeedPage() {
           {filteredIssues.length > 0 ? (
             filteredIssues.map((issue: any) => (
               <IssueCard
-                key={issue._id}   // ✅ FIXED
+                key={issue.id||issue._id}   // ✅ FIXED
                 issue={issue}
                 onVote={handleVote}
                 onViewDetails={handleViewDetails}
