@@ -8,6 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateIssue } from '@/hooks/useCreateIssue';
+import { IssueCard } from '@/components/issues/IssueCard';
+import { useVoteIssue } from '@/hooks/useVoteIssue';
+
+
 import { 
   Camera, 
   MapPin, 
@@ -22,7 +26,11 @@ import {
 import { GeoLocation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
+
 export default function ReportIssuePage() {
+  const voteMutation = useVoteIssue();
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +44,9 @@ export default function ReportIssuePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-
+  const [selectedDuplicate, setSelectedDuplicate] = useState<string | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+const [isDetailOpen, setIsDetailOpen] = useState(false);
   // Auto-detect location on mount
   useEffect(() => {
     detectLocation();
@@ -129,7 +139,37 @@ export default function ReportIssuePage() {
     setLocationError('');
     setShowLocationPicker(false);
   };
+const handleForceSubmit = async (issueId: string) => {
+  if (!location || !image) return;
+  try {
+    await createIssueMutation.mutateAsync({
+      description,
+      latitude: location!.latitude,
+      longitude: location!.longitude,
+      image,
+      force_duplicate: true,
+      forced_against_issue_id: issueId,
+    });
 
+    toast({
+      title: 'Issue reported anyway',
+      description: 'Marked as duplicate but submitted',
+    });
+    setImage(null);
+setImagePreview(null);
+setDescription('');
+setLocation(null);
+setShowDuplicateDialog(false);
+    navigate('/my-issues');
+
+  } catch (error: any) {
+  toast({
+    title: 'Failed',
+    description: error?.response?.data?.message || 'Could not submit duplicate',
+    variant: 'destructive',
+  });
+}
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -163,16 +203,11 @@ try {
 
   // Duplicate detection
   if (result.duplicateDetected) {
-    toast({
-      title: 'Similar issue already reported',
-      description: 'You can upvote the existing issue instead.',
-    });
-
-    console.log("Duplicates:", result.duplicates);
-
-    setIsSubmitting(false);
-    return;
-  }
+  setDuplicates(result.duplicates);
+  setShowDuplicateDialog(true);
+  setIsSubmitting(false);
+  return;
+}
 
   toast({
     title: 'Issue reported successfully!',
@@ -206,7 +241,7 @@ try {
   }
 
   return (
-    <MainLayout requireAuth allowedRoles={['citizen']}>
+    <MainLayout requireAuth allowedRoles={['user']}>
       <div className="container max-w-2xl py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Report an Issue</h1>
@@ -404,6 +439,62 @@ try {
                 )}
               </Button>
             </form>
+            {showDuplicateDialog && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-white rounded-lg p-6 w-full max-w-2xl space-y-4">
+      <h2 className="text-lg font-semibold">Similar issues found</h2>
+
+      
+<div className="space-y-3 max-h-96 overflow-y-auto">
+  {duplicates.map((dup: any) => (
+    <IssueCard
+      key={dup.issue_id}
+      issue={{
+  id: dup.issue_id,
+  summary: dup.summary,
+  description: dup.description,
+  image_url: dup.image_url
+    ? `http://localhost:5000/${dup.image_url}`
+    : null,
+  place: dup.place,
+  priority_score: dup.priority_score,
+  status: dup.status,
+  vote_count: dup.vote_count || 0,
+
+  // 🔥 ADD THIS
+  is_own_issue: dup.user_id === user?.id,
+}}
+      onVote={(id) => voteMutation.mutate(id)}
+      onViewDetails={() => {
+  setSelectedDuplicate(dup.issue_id);
+}}
+    />
+  ))}
+</div>
+
+
+      <div className="flex gap-2 pt-2">
+  <Button
+    className="flex-1"
+    variant="destructive"
+   onClick={() => {
+  handleForceSubmit(selectedDuplicate || duplicates[0]?.issue_id);
+}}
+  >
+    Report Anyway
+  </Button>
+
+  <Button
+    className="flex-1"
+    variant="outline"
+    onClick={() => setShowDuplicateDialog(false)}
+  >
+    Cancel
+  </Button>
+</div>
+    </div>
+  </div>
+)}
           </CardContent>
         </Card>
       </div>

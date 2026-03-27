@@ -124,15 +124,38 @@ const place = {
     });
 
     if (duplicates.length > 0 && !force_duplicate) {
-      return res.status(200).json({
-        message: "Similar issues already exist nearby",
-        summary,
-        category,
-        priority_score: ai_priority_score,
-        place,
-        possible_duplicates: duplicates,
-      });
-    }
+
+  // 🔥 FETCH FULL DATA FOR DUPLICATES
+  const detailedDuplicates = await Promise.all(
+    duplicates.map(async (dup) => {
+      const issue = await Issue.findById(dup.issue_id);
+
+      if (!issue) return null;
+
+      return {
+        issue_id: issue._id,
+        distance_meters: dup.distance_meters,
+
+        // 🔥 REQUIRED FOR UI
+        summary: issue.summary || issue.description,
+        description: issue.description,
+        image_url: issue.issue_image,
+        place: issue.place?.formatted || null,
+        priority_score: issue.priority_score,
+        status: issue.status,
+      };
+    })
+  );
+
+  return res.status(200).json({
+    message: "Similar issues already exist nearby",
+    summary,
+    category,
+    priority_score: ai_priority_score,
+    place,
+    possible_duplicates: detailedDuplicates.filter(Boolean),
+  });
+}
     if (force_duplicate && forced_against_issue_id) {
 
   const originalIssue = await Issue.findById(forced_against_issue_id);
@@ -153,7 +176,8 @@ const place = {
       description,
       latitude,
       longitude,
-      place, 
+      place,
+         summary,
       issue_image: req.file ? `uploads/issues/${req.file.filename}` : null,
       duplicates: [],
       // 🔥 BASE PRIORITY (IMMUTABLE)

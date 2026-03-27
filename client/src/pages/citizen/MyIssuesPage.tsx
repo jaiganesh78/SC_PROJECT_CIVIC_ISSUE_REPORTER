@@ -158,7 +158,11 @@ if (isLoading) {
 
                     {/* Title */}
                     <h3 className="mb-1 text-lg font-semibold">{issue.summary}</h3>
-
+                    {issue.description && (
+  <p className="text-sm text-muted-foreground line-clamp-2">
+    {issue.description}
+  </p>
+)}
                     {/* Meta - Human readable location only */}
                     <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">

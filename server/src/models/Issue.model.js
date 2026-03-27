@@ -145,6 +145,10 @@ issue_image: String,
       type: String,
       default: "other",
     },
+    summary: {
+  type: String,
+  default: "",
+},
 
     image_raw_predictions: {
       type: Array,
@@ -199,6 +203,7 @@ fake_confirmed_by: {
   ref: "User",
   default: null,
 },
+
 
 fake_confirmed_at: {
   type: Date,

@@ -42,7 +42,7 @@ async function findDuplicateIssues({
     category,
     status: { $nin: ["closed","fake"] },
     createdAt: { $gte: since },
-  }).select("_id latitude longitude status createdAt");
+  }).select("_id latitude longitude status createdAt description issue_image place priority_score summary");
 
   // 2️⃣ Precise geo-distance check
   const duplicates = [];
@@ -57,11 +57,22 @@ async function findDuplicateIssues({
 
     if (distance <= radiusMeters) {
       duplicates.push({
-        issue_id: issue._id,
-        distance_meters: Math.round(distance),
-        status: issue.status,
-        created_at: issue.createdAt,
-      });
+  issue_id: issue._id,
+  distance_meters: Math.round(distance),
+
+  // 🔥 UI REQUIRED FIELDS
+  summary: issue.summary || issue.description,
+  description: issue.description,
+
+  image_url: issue.issue_image || null,
+
+  place: issue.place?.formatted || null,
+
+  priority_score: issue.priority_score || 0,
+
+  status: issue.status,
+  created_at: issue.createdAt,
+});
     }
   }
 
