@@ -10,8 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCreateIssue } from '@/hooks/useCreateIssue';
 import { IssueCard } from '@/components/issues/IssueCard';
 import { useVoteIssue } from '@/hooks/useVoteIssue';
-
-
+import { useAuth } from '@/contexts/AuthContext';
+import { IssueDetailModal } from '@/components/issues/IssueDetailModal';
+import { adaptIssue } from '@/adapters/issue.adapter';
 import { 
   Camera, 
   MapPin, 
@@ -35,7 +36,7 @@ const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const createIssueMutation = useCreateIssue();
-  
+  const { user } = useAuth();
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -446,30 +447,60 @@ try {
 
       
 <div className="space-y-3 max-h-96 overflow-y-auto">
-  {duplicates.map((dup: any) => (
-    <IssueCard
-      key={dup.issue_id}
-      issue={{
-  id: dup.issue_id,
-  summary: dup.summary,
-  description: dup.description,
-  image_url: dup.image_url
-    ? `http://localhost:5000/${dup.image_url}`
-    : null,
-  place: dup.place,
-  priority_score: dup.priority_score,
-  status: dup.status,
-  vote_count: dup.vote_count || 0,
+  {duplicates.map((dup: any) => {
+  const adapted = adaptIssue(
+  {
+    _id: dup.issue_id,
+    summary: dup.summary,
+    description: dup.description,
+    issue_image: dup.image_url,
+    place: dup.place,
+    priority_score: dup.priority_score,
+    status: dup.status,
+    vote_count: dup.vote_count || 0,
+    createdAt: dup.created_at || new Date(),
+    user_id: dup.user_id,
+  },
+  user?.id
+);
 
-  // 🔥 ADD THIS
-  is_own_issue: dup.user_id === user?.id,
+  return (
+    <IssueCard
+      key={adapted.id}
+      issue={adapted}
+      onVote={async (id) => {
+  try {
+    const res = await voteMutation.mutateAsync(id);
+
+    // 🔥 UPDATE UI MANUALLY (CRITICAL)
+    setDuplicates((prev) =>
+      prev.map((d) =>
+        d.issue_id === id
+          ? {
+              ...d,
+              vote_count: (d.vote_count || 0) + 1,
+            }
+          : d
+      )
+    );
+
+    toast({ title: "Vote recorded" });
+  } catch (err: any) {
+    toast({
+      title: "Vote failed",
+      description: err?.response?.data?.message || "Error",
+      variant: "destructive",
+    });
+  }
 }}
-      onVote={(id) => voteMutation.mutate(id)}
-      onViewDetails={() => {
-  setSelectedDuplicate(dup.issue_id);
-}}
+      onViewDetails={(issue) => {
+        setSelectedIssue(issue);
+        setSelectedDuplicate(issue.id);
+        setIsDetailOpen(true);
+      }}
     />
-  ))}
+  );
+})}
 </div>
 
 
@@ -491,13 +522,21 @@ try {
   >
     Cancel
   </Button>
+  
 </div>
     </div>
   </div>
 )}
+
           </CardContent>
         </Card>
       </div>
+      <IssueDetailModal
+  issue={selectedIssue}
+  open={isDetailOpen}
+  onOpenChange={setIsDetailOpen}
+/>
     </MainLayout>
+    
   );
 }

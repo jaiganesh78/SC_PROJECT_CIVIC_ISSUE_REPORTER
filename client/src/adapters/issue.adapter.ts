@@ -2,8 +2,7 @@ import { Issue } from '@/types';
 
 const BASE_URL = 'http://localhost:5000';
 
-export function adaptIssue(raw: any): Issue {
-  return {
+export function adaptIssue(raw: any, currentUserId?: string): Issue {  return {
     id: raw._id,
 
     user_id: raw.user_id,
@@ -41,7 +40,7 @@ export function adaptIssue(raw: any): Issue {
     // TEMP (next step we fix backend)
     vote_count: raw.vote_count || 0,
 has_voted: raw.has_voted || false,
-    is_own_issue: false,
+    is_own_issue: raw.user_id === currentUserId,
 
     assigned_department: raw.assigned_department_name || null,
 
