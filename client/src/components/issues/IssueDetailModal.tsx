@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useVoteIssue } from '@/hooks/useVoteIssue';
 import {
   MapPin,
   AlertTriangle,
@@ -10,16 +11,19 @@ import {
   Map,
   CheckCircle2,
   X,
+  ThumbsUp,
   ImageIcon
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 interface IssueDetailModalProps {
   issue: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  showMapButton?: boolean; // ✅ NEW
 }
 
 function getProgressPercentage(status: string): number {
@@ -48,14 +52,20 @@ function getStageLabel(status: string): string {
   return stages[status] ?? 'Processing';
 }
 
-export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModalProps) {
+export function IssueDetailModal({ 
+  issue, 
+  open, 
+  onOpenChange, 
+  showMapButton = true // ✅ default ON
+}: IssueDetailModalProps){
   const navigate = useNavigate();
-
+const { mutate: vote ,isPending} = useVoteIssue();
   if (!issue) return null;
 
   const priorityLevel = getPriorityLevel(issue.priority_score || 0);
   const progressPercentage = getProgressPercentage(issue.status);
-
+const [localVotes, setLocalVotes] = useState(issue.vote_count || 0);
+const [hasVoted, setHasVoted] = useState(issue.has_voted || false);
   const priorityClasses: Record<string, string> = {
     low: 'priority-low',
     medium: 'priority-medium',
@@ -75,14 +85,28 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
   const handleViewOnMap = () => {
      console.log("MAP CLICKED", issue._id);
     onOpenChange(false);
-  window.location.href = `/map?issueId=${issue._id}`; // ✅ FIXED
+navigate(`/map?issueId=${issue.id}`); // ✅ FIXED
   };
+useEffect(() => {
+  setLocalVotes(issue.vote_count || 0);
+  setHasVoted(issue.has_voted || false);
+}, [issue]);
+const handleVote = () => {
+  if (hasVoted || issue.is_own_issue) return;
 
+  vote(issue.id);
+
+  // 🔥 optimistic update
+  setLocalVotes(prev => prev + 1);
+  setHasVoted(true);
+};
   // 🔥 SAFE DATE HANDLING
   let timeAgo = 'Unknown';
   try {
-    if (issue.created_at) {
-  timeAgo = formatDistanceToNow(new Date(issue.created_at), { addSuffix: true });
+    const created = issue.created_at || issue.createdAt;
+
+if (created) {
+  timeAgo = formatDistanceToNow(new Date(created), { addSuffix: true });
 }
   } catch {}
 
@@ -209,12 +233,22 @@ export function IssueDetailModal({ issue, open, onOpenChange }: IssueDetailModal
               )}
             </div>
           )}
-
+       <Button
+  variant={hasVoted ? 'secondary' : 'outline'}
+  className="w-full mb-2 flex items-center justify-center gap-2"
+  onClick={handleVote}
+  disabled={hasVoted || issue.is_own_issue || isPending}
+>
+  <ThumbsUp className={hasVoted ? 'fill-current' : ''} />
+  {localVotes}
+</Button>
           {/* Action */}
-          <Button onClick={handleViewOnMap} className="w-full" size="lg">
-            <Map className="mr-2 h-5 w-5" />
-            View on Map
-          </Button>
+          {showMapButton && (
+  <Button onClick={handleViewOnMap} className="w-full" size="lg">
+    <Map className="mr-2 h-5 w-5" />
+    View on Map
+  </Button>
+)}
         </div>
       </DialogContent>
     </Dialog>

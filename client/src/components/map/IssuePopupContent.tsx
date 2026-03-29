@@ -5,9 +5,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface IssuePopupContentProps {
   issue: Issue;
+  onViewDetails?: () => void;
 }
 
-export function IssuePopupContent({ issue }: IssuePopupContentProps) {
+export function IssuePopupContent({ issue, onViewDetails }: IssuePopupContentProps){
   const priorityLevel = getPriorityLevel(issue.priority_score);
   
   const priorityConfig = {
@@ -89,6 +90,14 @@ export function IssuePopupContent({ issue }: IssuePopupContentProps) {
         <span className="text-xs text-muted-foreground">Priority Score</span>
         <span className="text-sm font-semibold">{issue.priority_score.toFixed(0)}</span>
       </div>
+      <div className="mt-3 flex justify-end">
+  <button
+    onClick={onViewDetails}
+    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+  >
+    View Details
+  </button>
+</div>
     </div>
   );
 }

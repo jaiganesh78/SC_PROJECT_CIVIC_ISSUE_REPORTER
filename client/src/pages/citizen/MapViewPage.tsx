@@ -11,22 +11,22 @@ import { Link } from 'react-router-dom';
 import { demoIssues, filterIssues } from '@/data/demoIssues';
 import { IssueFilters, Issue } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
+import { useIssues } from '@/hooks/useIssues';
 export default function MapViewPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<IssueFilters>({});
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+const { data: issues = [], isLoading } = useIssues();
   // Get focused issue ID from URL params
   const focusedIssueId = searchParams.get('issueId');
   
   // Find the focused issue
   const focusedIssue = useMemo(() => {
-    if (!focusedIssueId) return null;
-    return demoIssues.find(issue => issue.id === focusedIssueId) || null;
-  }, [focusedIssueId]);
+  if (!focusedIssueId) return null;
+ return issues.find(issue => String(issue.id) === String(focusedIssueId)) || null;
+}, [focusedIssueId, issues]);
 
   // Calculate map center and zoom based on focused issue
   const mapCenter: [number, number] = focusedIssue 
@@ -37,11 +37,17 @@ export default function MapViewPage() {
 
   // If there's a focused issue, show only that issue initially
   const displayedIssues = useMemo(() => {
-    if (focusedIssue) {
-      return [focusedIssue];
-    }
-    return filterIssues(demoIssues, filters);
-  }, [focusedIssue, filters]);
+  // 🔥 WAIT until issues are loaded
+  if (focusedIssueId && issues.length > 0) {
+    const found = issues.find(
+      issue => String(issue.id) === String(focusedIssueId)
+    );
+
+    if (found) return [found];
+  }
+
+  return filterIssues(issues, filters);
+}, [focusedIssueId, issues, filters]);
 
   const handleIssueClick = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -51,9 +57,11 @@ export default function MapViewPage() {
   const handleClearFocus = () => {
     setSearchParams({});
   };
-
+if (isLoading) {
+  return <div className="p-4">Loading map...</div>;
+}
   return (
-    <MainLayout requireAuth allowedRoles={['citizen']}>
+    <MainLayout requireAuth allowedRoles={['user']}>
       <div className="relative h-[calc(100vh-4rem)]">
         {/* Map */}
         <IssueMap
@@ -61,7 +69,11 @@ export default function MapViewPage() {
           center={mapCenter}
           zoom={mapZoom}
           onIssueClick={handleIssueClick}
-          highlightedIssueId={focusedIssueId || undefined}
+          highlightedIssueId={
+  focusedIssueId && issues.length > 0
+    ? focusedIssueId
+    : undefined
+}
           className="h-full w-full"
         />
 
@@ -150,11 +162,12 @@ export default function MapViewPage() {
       </div>
 
       {/* Issue Detail Modal */}
-      <IssueDetailModal
-        issue={selectedIssue}
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-      />
+     <IssueDetailModal
+  issue={selectedIssue}
+  open={isModalOpen}
+  onOpenChange={setIsModalOpen}
+  showMapButton={false} // ✅ HIDE HERE
+/>
     </MainLayout>
   );
 }
