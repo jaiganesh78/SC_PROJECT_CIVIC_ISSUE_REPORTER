@@ -16,36 +16,33 @@ import { demoIssues } from '@/data/demoIssues';
 import { getCategoryDisplayName, Issue } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-
+import { useAdminFakeIssues } from '@/hooks/useAdminFakeIssues';
+import { useConfirmFakeIssue } from '@/hooks/useConfirmFakeIssue';
 // Demo fake flagged issues
-const fakeFlaggedIssues = [
-  {
-    ...demoIssues[0],
-    id: 'fake-1',
-    fake_flag: {
-      reason: 'The location shown in the image does not match the GPS coordinates provided.',
-      flagged_by_name: 'Sarah Staff',
-    },
-  },
-  {
-    ...demoIssues[2],
-    id: 'fake-2',
-    fake_flag: {
-      reason: 'This appears to be an old image from 2 years ago.',
-      flagged_by_name: 'Mike Johnson',
-    },
-  },
-];
+
 
 export default function AdminFakeReportsPage() {
   const { toast } = useToast();
+const { data, isLoading } = useAdminFakeIssues();
+const fakeFlaggedIssues = data?.issues || [];
 
-  const handleConfirmFake = (issue: typeof fakeFlaggedIssues[0]) => {
+const confirmMutation = useConfirmFakeIssue();
+  const handleConfirmFake = async (issue: Issue) => {
+  try {
+    await confirmMutation.mutateAsync(issue.id);
+
     toast({
       title: 'Report marked as fake',
-      description: 'User trust score has been adjusted accordingly.',
+      description: 'User trust score updated',
     });
-  };
+  } catch {
+    toast({
+      title: 'Error',
+      description: 'Failed to confirm fake',
+      variant: 'destructive',
+    });
+  }
+};
 
   const handleDismissFlag = (issue: typeof fakeFlaggedIssues[0]) => {
     toast({
@@ -53,7 +50,9 @@ export default function AdminFakeReportsPage() {
       description: 'The issue has been returned to normal processing.',
     });
   };
-
+if (isLoading) {
+  return <div className="p-6">Loading...</div>;
+}
   return (
     <MainLayout requireAuth allowedRoles={['admin']}>
       <div className="p-6 lg:p-8">

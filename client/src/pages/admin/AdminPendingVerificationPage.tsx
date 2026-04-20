@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+ import { useAdminPendingIssues } from '@/hooks/useAdminPendingIssues';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,8 @@ import {
   XCircle, 
   Clock,
   MapPin,
-  Eye,
   AlertTriangle,
+  Eye,
   ChevronRight
 } from 'lucide-react';
 import { demoIssues } from '@/data/demoIssues';
@@ -34,9 +35,11 @@ export default function AdminPendingVerificationPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   // Get resolved issues pending verification
-  const pendingIssues = useMemo(() => {
-    return demoIssues.filter(issue => issue.status === 'resolved');
-  }, []);
+ 
+
+const { data, isLoading } = useAdminPendingIssues();
+
+const pendingIssues = data?.issues || [];
 
   const handleVerify = (issue: Issue) => {
     toast({
@@ -70,7 +73,9 @@ export default function AdminPendingVerificationPage() {
     high: 'bg-priority-high/15 text-priority-high',
     critical: 'bg-priority-critical/15 text-priority-critical',
   };
-
+if (isLoading) {
+  return <div className="p-6">Loading...</div>;
+}
   return (
     <MainLayout requireAuth allowedRoles={['admin']}>
       <div className="p-6 lg:p-8">

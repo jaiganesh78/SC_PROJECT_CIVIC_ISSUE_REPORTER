@@ -14,6 +14,12 @@ import { Button } from '@/components/ui/button';
 
 const adminNavItems = [
   {
+  href: '/admin/issues',
+  label: 'Issue Feed',
+  icon: FileWarning,
+  description: 'All reported issues',
+},
+  {
     href: '/admin/pending',
     label: 'Pending Verification',
     icon: Shield,

@@ -33,7 +33,7 @@ export function MainLayout({ children, requireAuth = false, allowedRoles }: Main
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     // Redirect based on role
     const redirectPath = user.role === 'admin' 
-  ? '/admin/pending' 
+  ? '/admin/issues'
   : user.role === 'staff' 
     ? '/staff/assigned' 
     : '/issues';
@@ -81,7 +81,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   if (isAuthenticated && user) {
     // Redirect based on role
    const redirectPath = user.role === 'admin' 
-  ? '/admin/pending' 
+  ? '/admin/issues'
   : user.role === 'staff' 
     ? '/staff/assigned' 
     : '/issues';

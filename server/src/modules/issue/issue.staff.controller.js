@@ -76,7 +76,10 @@ const resolveIssue = async (req, res) => {
     issue.resolved_by = staff.userId;
     issue.resolved_at = new Date();
     issue.status = "resolved_pending_verification";
-
+    issue.timeline.push({
+  status: "resolved_pending_verification",
+  at: new Date()
+});
     // Optional fake flag (staff opinion only)
     if (is_fake === "true") {
       issue.staff_flagged_fake = true;
@@ -84,6 +87,14 @@ const resolveIssue = async (req, res) => {
     }
 
     await issue.save();
+    const io = req.app.get("io");
+
+io.emit("issue_updated", {
+  issueId: issue._id,
+  status: issue.status,
+  timeline: issue.timeline,
+  priority_score: issue.priority_score,
+});
 const admin = await User.findOne({ role: "admin" });
 const reporter = await User.findById(issue.user_id);
 

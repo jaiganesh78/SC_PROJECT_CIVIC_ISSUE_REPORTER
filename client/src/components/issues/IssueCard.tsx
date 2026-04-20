@@ -5,12 +5,34 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, ThumbsUp, AlertTriangle, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreVertical } from 'lucide-react';
 interface IssueCardProps {
   issue: any; // 🔥 allow flexible backend shape
   onVote?: (issueId: string) => void;
   onViewDetails?: (issue: any) => void;
   showVoteButton?: boolean;
   className?: string;
+  isAdmin?: boolean;
+  onAdminAction?: (action: string, issue: any) => void;
+}
+function getStageLabel(status: string): string {
+  const map: Record<string, string> = {
+    open: 'Open',
+    assigned: 'Assigned',
+    assigned_auto: 'Assigned',
+    resolved_pending_verification: 'Verifying',
+    closed: 'Closed',
+    rejected: 'Rejected',
+    fake: 'Fake',
+  };
+
+  return map[status] || status;
 }
 
 export function IssueCard({
@@ -18,7 +40,9 @@ export function IssueCard({
   onVote,
   onViewDetails,
   showVoteButton = true,
-  className
+  className,
+  isAdmin = false,
+  onAdminAction
 }: IssueCardProps) {
 
   const priorityLevel = getPriorityLevel(issue.priority_score || 0);
@@ -57,16 +81,45 @@ console.log("ISSUE OBJECT:", issue);
   // 🔥 SAFE DATE HANDLING
   let timeAgo = 'Unknown';
   try {
-    if (issue.created_at) {
-  timeAgo = formatDistanceToNow(new Date(issue.created_at), { addSuffix: true });
+    const created = issue.created_at || issue.createdAt;
+
+if (created) {
+  timeAgo = formatDistanceToNow(new Date(created), { addSuffix: true });
 }
   } catch {}
 
   return (
     <Card className={cn('issue-card overflow-hidden', className)}>
       <CardContent className="p-0">
-        <div className="flex">
+        <div className="flex relative">
+          {isAdmin && (
+  <div className="absolute top-3 right-3 z-20">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="p-1 rounded hover:bg-muted">
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
 
+      <DropdownMenuContent align="end">
+       <DropdownMenuItem onClick={() => onAdminAction?.("priority", issue)}>
+  Change Priority
+</DropdownMenuItem>
+
+<DropdownMenuItem onClick={() => onAdminAction?.("department", issue)}>
+  Change Department
+</DropdownMenuItem>
+
+<DropdownMenuItem
+  onClick={() => onAdminAction?.("delete", issue)}
+  className="text-destructive"
+>
+  Delete Issue
+</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+)}
           {/* Image */}
           {issue.image_url && (
             <div
@@ -129,7 +182,40 @@ console.log("ISSUE OBJECT:", issue);
                 <span>Priority: {Math.round(issue.priority_score || 0)}</span>
               </div>
             </div>
+{/* 🔥 MINI PROGRESS BAR */}
+{/* 🔥 HORIZONTAL STEP TIMELINE */}
+<div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
 
+  {["open", "assigned", "resolved_pending_verification", "closed"].map((stage, i) => {
+    const currentIndex = ["open", "assigned", "resolved_pending_verification", "closed"]
+      .indexOf(issue.status);
+
+    const isActive = i <= currentIndex;
+
+    return (
+      <div key={stage} className="flex-1 flex flex-col items-center relative">
+
+        {/* line */}
+        {i !== 0 && (
+          <div className="absolute top-1.5 left-[-50%] w-full h-[2px] bg-border z-0" />
+        )}
+
+        {/* dot */}
+        <div
+          className={cn(
+            "h-2.5 w-2.5 rounded-full z-10",
+            isActive ? "bg-primary" : "bg-border"
+          )}
+        />
+
+        {/* label */}
+        <span className="mt-1 text-[9px] text-center">
+          {getStageLabel(stage)}
+        </span>
+      </div>
+    );
+  })}
+</div>
             {/* Actions */}
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
 

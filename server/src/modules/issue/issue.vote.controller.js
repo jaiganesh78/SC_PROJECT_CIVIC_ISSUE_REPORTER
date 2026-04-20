@@ -54,7 +54,13 @@ const voteOnIssue = async (req, res) => {
 
     issue.priority_score = newPriority;
     await issue.save();
+const io = req.app.get("io");
 
+io.emit("vote_updated", {
+  issueId: issueId,
+  totalVotes,
+  priority: issue.priority_score,
+});
     return res.status(200).json({
       message: "Vote registered",
       total_votes: totalVotes,

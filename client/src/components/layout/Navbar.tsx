@@ -58,6 +58,7 @@ export function Navbar() {
           { href: '/admin/fake-reports', label: 'Fake Reports', icon: FileText },
           { href: '/admin/map', label: 'Global Map', icon: MapPin },
           { href: '/admin/analytics', label: 'Analytics', icon: Building2 },
+          { href: '/admin/issues', label: 'Issue Feed', icon: MapPin },
         ];
       default:
         return [];

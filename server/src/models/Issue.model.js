@@ -209,7 +209,12 @@ fake_confirmed_at: {
   type: Date,
   default: null,
 },
-
+timeline: [
+  {
+    status: String,
+    at: Date,
+  }
+],
   },
   { timestamps: true }
 );

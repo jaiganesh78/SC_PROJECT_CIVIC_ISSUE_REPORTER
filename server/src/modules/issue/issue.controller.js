@@ -200,7 +200,14 @@ const place = {
       forced_against_issue_id: force_duplicate
         ? forced_against_issue_id
         : null,
+      timeline: [
+  { status: "open", at: new Date() },
+  ...(status === "assigned_auto"
+    ? [{ status: "assigned_auto", at: new Date() }]
+    : [])
+],
     });
+    
     if (force_duplicate && forced_against_issue_id) {
 
   await Issue.findByIdAndUpdate(
@@ -250,7 +257,13 @@ const place = {
         issue,
       });
     }
+const io = req.app.get("io");
 
+io.emit("issue_created", {
+  ...issue.toObject(),
+  timeline: issue.timeline,
+  priority_score: issue.priority_score,
+});
     // ===============================
     // RESPONSE
     // ===============================
@@ -294,7 +307,7 @@ const getIssueById = async (req, res) => {
 
     return res.status(200).json({
   _id: issue._id,
-
+  timeline: issue.timeline || [],
   category: issue.category,
   description: issue.description,
 
@@ -361,7 +374,7 @@ const getIssues = async (req, res) => {
 
       return {
         ...issue.toObject(),
-
+      timeline: issue.timeline || [],
         priority_score:
           issue.priority_score + timeEscalation,
 

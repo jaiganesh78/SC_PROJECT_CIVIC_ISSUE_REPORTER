@@ -32,6 +32,18 @@ const confirmFakeIssue = async (req, res) => {
     // ===============================
     issue.admin_confirmed_fake = true;
     issue.status = "fake";
+    issue.timeline.push({
+  status: "fake",
+  at: new Date()
+});
+const io = req.app.get("io");
+
+io.emit("issue_updated", {
+  issueId: issue._id,
+  status: issue.status,
+  timeline: issue.timeline,
+  priority_score: issue.priority_score,
+});
     issue.fake_confirmed_by = req.user.userId;
     issue.fake_confirmed_at = new Date();
 
@@ -89,5 +101,25 @@ const confirmFakeIssue = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+/**
+ * ADMIN: Get fake flagged issues
+ */
+const getFakeIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({
+      status: "fake",
+    }).sort({ fake_confirmed_at: -1 });
 
-module.exports = { confirmFakeIssue };
+    return res.status(200).json({
+      count: issues.length,
+      issues,
+    });
+  } catch (error) {
+    console.error("ADMIN FETCH FAKE ERROR:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { confirmFakeIssue, getFakeIssues };
+
+

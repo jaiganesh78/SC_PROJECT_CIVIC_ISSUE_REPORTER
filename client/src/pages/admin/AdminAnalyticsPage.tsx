@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useIssues } from '@/hooks/useIssues';
 import { 
   BarChart, 
   Bar, 
@@ -29,11 +30,12 @@ import { getCategoryDisplayName, IssueCategory, IssueStatus } from '@/types';
 
 export default function AdminAnalyticsPage() {
   // Calculate stats
+  const { data: issues = [] } = useIssues();
   const stats = useMemo(() => {
-    const total = demoIssues.length;
-    const resolved = demoIssues.filter(i => ['resolved', 'verified'].includes(i.status)).length;
-    const pending = demoIssues.filter(i => ['pending', 'assigned', 'in_progress'].includes(i.status)).length;
-    const highPriority = demoIssues.filter(i => i.priority_score >= 70).length;
+    const total = issues.length;
+    const resolved = issues.filter(i => ['resolved', 'verified'].includes(i.status)).length;
+    const pending = issues.filter(i => ['pending', 'assigned', 'in_progress'].includes(i.status)).length;
+    const highPriority = issues.filter(i => i.priority_score >= 70).length;
     const resolutionRate = total > 0 ? ((resolved / total) * 100).toFixed(1) : '0';
     
     return { total, resolved, pending, highPriority, resolutionRate };
@@ -42,7 +44,7 @@ export default function AdminAnalyticsPage() {
   // Category breakdown
   const categoryData = useMemo(() => {
     const counts: Record<string, number> = {};
-    demoIssues.forEach(issue => {
+   issues.forEach(issue => {
       counts[issue.category] = (counts[issue.category] || 0) + 1;
     });
     
@@ -55,7 +57,7 @@ export default function AdminAnalyticsPage() {
   // Status breakdown
   const statusData = useMemo(() => {
     const counts: Record<string, number> = {};
-    demoIssues.forEach(issue => {
+   issues.forEach(issue => {
       counts[issue.status] = (counts[issue.status] || 0) + 1;
     });
     

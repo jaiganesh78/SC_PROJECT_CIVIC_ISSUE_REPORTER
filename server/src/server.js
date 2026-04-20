@@ -34,11 +34,33 @@ const startServer = async () => {
     }
   });
 }
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log("Registered endpoints:");
-     printRoutes(app);
-    });
+    const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*", // keep simple for now
+  },
+});
+
+// 🔥 MAKE IO GLOBAL
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("🟢 Client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log("Registered endpoints:");
+  printRoutes(app);
+});
   } catch (err) {
     console.error("❌ Server failed to start:", err.message);
     process.exit(1);

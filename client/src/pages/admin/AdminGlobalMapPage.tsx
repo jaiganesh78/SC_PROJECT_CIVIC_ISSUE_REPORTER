@@ -7,23 +7,34 @@ import { Button } from '@/components/ui/button';
 import { Filter } from 'lucide-react';
 import { demoIssues, filterIssues } from '@/data/demoIssues';
 import { IssueFilters } from '@/types';
+import { useIssues } from '@/hooks/useIssues';
+import { Issue } from '@/types';
+import { IssueDetailModal } from '@/components/issues/IssueDetailModal';
+
 
 export default function AdminGlobalMapPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<IssueFilters>({});
-
-  const filteredIssues = filterIssues(demoIssues, filters);
+const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+const [isModalOpen, setIsModalOpen] = useState(false);
+ const { data: issues = [] } = useIssues();
+const handleIssueClick = (issue: Issue) => {
+  setSelectedIssue(issue);
+  setIsModalOpen(true);
+};
+const filteredIssues = filterIssues(issues, filters);
 
   return (
     <MainLayout requireAuth allowedRoles={['admin']}>
       <div className="relative h-[calc(100vh-4rem)]">
         {/* Map */}
-        <IssueMap
-          issues={filteredIssues}
-          center={[12.9716, 77.5946]}
-          zoom={11}
-          className="h-full w-full"
-        />
+       <IssueMap
+  issues={filteredIssues}
+  center={undefined}
+  zoom={undefined}
+  onIssueClick={handleIssueClick}   // 🔥 ADD THIS
+  className="h-full w-full"
+/>
 
         {/* Controls */}
         <div className="absolute left-4 right-4 top-4 z-[1000] flex items-start justify-between gap-4">
@@ -62,6 +73,11 @@ export default function AdminGlobalMapPage() {
             <span className="text-primary">{filteredIssues.length}</span> total issues
           </p>
         </div>
+        <IssueDetailModal
+  issue={selectedIssue}
+  open={isModalOpen}
+  onOpenChange={setIsModalOpen}
+/>
       </div>
     </MainLayout>
   );

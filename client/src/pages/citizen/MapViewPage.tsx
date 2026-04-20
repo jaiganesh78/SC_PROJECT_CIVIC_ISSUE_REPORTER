@@ -29,11 +29,10 @@ const { data: issues = [], isLoading } = useIssues();
 }, [focusedIssueId, issues]);
 
   // Calculate map center and zoom based on focused issue
-  const mapCenter: [number, number] = focusedIssue 
-    ? [focusedIssue.latitude, focusedIssue.longitude]
-    : [12.9716, 77.5946]; // Bangalore center
-  
-  const mapZoom = focusedIssue ? 16 : 12;
+  const mapCenter: [number, number] | undefined = focusedIssue
+  ? [focusedIssue.latitude, focusedIssue.longitude]
+  : undefined;
+const mapZoom: number | undefined = focusedIssue ? 16 : undefined;
 
   // If there's a focused issue, show only that issue initially
   const displayedIssues = useMemo(() => {

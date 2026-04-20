@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthLayout } from "./components/layout/MainLayout";
-
+import AdminIssueFeedPage from "./pages/admin/AdminIssueFeedPage";
 // Auth pages
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -61,7 +61,7 @@ const App = () => (
             <Route path="/admin/fake-reports" element={<AdminFakeReportsPage />} />
             <Route path="/admin/map" element={<AdminGlobalMapPage />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-
+            <Route path="/admin/issues" element={<AdminIssueFeedPage />} />
             {/* Common routes */}
             <Route path="/profile" element={<ProfilePage />} />
             
